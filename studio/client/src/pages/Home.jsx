@@ -16,7 +16,7 @@ export function Home() {
             <Link to="/campaigns/new" className="button solid">Start a campaign</Link>
             <Link to="/library" className="button">Brand library</Link>
           </div>
-          <p className="fine">{LENGTH_RULE} Exported at 1920×1080, 60 fps, H.264, with original music and a local voice.</p>
+          <p className="fine">{LENGTH_RULE} Exported at 1920×1080, 60 fps, H.264, with original music ducked under an ElevenLabs voice.</p>
         </div>
         <div className="hero-frames" aria-hidden="true">
           <figure>
@@ -45,7 +45,7 @@ export function Home() {
           <li>
             <span>03</span>
             <h2>Film</h2>
-            <p>A real MP4, built from your stills, type, and brand color, with original music ducked under a local voice.</p>
+            <p>A real MP4, built from your stills, type, and brand color, with original music ducked under a premade ElevenLabs voice.</p>
           </li>
         </ol>
       </section>
@@ -67,7 +67,7 @@ export function Home() {
           <div><b>1920×1080</b><span>Frame</span></div>
           <div><b>60 fps</b><span>H.264</span></div>
           <div><b>4s–3 min</b><span>Length</span></div>
-          <div><b>Music + voice</b><span>Original, local</span></div>
+          <div><b>Music + voice</b><span>ElevenLabs Brian</span></div>
         </div>
       </section>
     </main>

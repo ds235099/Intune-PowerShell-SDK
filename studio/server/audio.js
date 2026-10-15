@@ -1,24 +1,38 @@
 import { spawn } from "node:child_process";
-import { unlink } from "node:fs/promises";
+import { unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { voiceoverScript } from "../shared/model.js";
+import { VOICE_ID, VOICE_MODEL, VOICE_NAME, voiceoverScript } from "../shared/model.js";
 
-const VOICE = "en-us";
+export const MISSING_ELEVENLABS_KEY = "MISSING_ELEVENLABS_KEY";
+
+export function elevenLabsKeyPresent() {
+  return Boolean(process.env.ELEVENLABS_API_KEY && String(process.env.ELEVENLABS_API_KEY).trim());
+}
 
 export async function renderSoundtrack({ duration, brandId, workDir }) {
   const musicPath = path.join(workDir, "music.wav");
-  const voicePath = path.join(workDir, "voice.wav");
+  const voicePath = path.join(workDir, "voice.mp3");
   const fittedPath = path.join(workDir, "voice-fit.wav");
   const mixPath = path.join(workDir, "soundtrack.wav");
   const { fadeIn, fadeOut } = bedFades(duration);
   await synthBed({ duration, brandId, fadeIn, fadeOut, output: musicPath });
+  if (!elevenLabsKeyPresent()) {
+    const error = new Error("ElevenLabs key is missing.");
+    error.code = MISSING_ELEVENLABS_KEY;
+    throw error;
+  }
   await speak(voiceoverScript(duration), voicePath);
-  const slot = Math.max(0.8, duration - fadeIn - fadeOut - 0.12);
-  await fitVoice(voicePath, slot, fittedPath);
-  const lead = Math.min(fadeIn + 0.08, Math.max(0.12, duration * 0.04));
+  await fitVoice(voicePath, fittedPath);
+  const spoken = await probeDuration(fittedPath);
+  const lead = Math.min(0.6, Math.max(0.2, fadeIn));
+  if (spoken > duration - lead - 0.25) {
+    throw new Error(
+      `The ${VOICE_NAME} read is ${spoken.toFixed(1)}s, which is longer than this ${duration}s ad at a natural pace.`,
+    );
+  }
   await mixBedAndVoice({ musicPath, voicePath: fittedPath, duration, lead, output: mixPath });
   await unlink(voicePath).catch(() => {});
-  return mixPath;
+  return { path: mixPath, voiceName: VOICE_NAME, elevenLabsCalled: true };
 }
 
 export function bedFades(duration) {
@@ -58,27 +72,47 @@ function synthBed({ duration, brandId, fadeIn, fadeOut, output }) {
   ]);
 }
 
-function speak(text, output) {
-  return run("espeak-ng", ["-v", VOICE, "-s", "148", "-p", "38", "-a", "170", "-w", output, text]).catch((error) => {
-    const wrapped = new Error(`Local voice failed. espeak-ng is required and no paid voice API is called. ${error.message}`);
-    wrapped.status = 500;
-    throw wrapped;
-  });
+async function speak(text, output) {
+  const key = String(process.env.ELEVENLABS_API_KEY).trim();
+  const response = await fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}?output_format=mp3_44100_128`,
+    {
+      method: "POST",
+      headers: {
+        "xi-api-key": key,
+        "Content-Type": "application/json",
+        Accept: "audio/mpeg",
+      },
+      body: JSON.stringify({
+        text,
+        model_id: VOICE_MODEL,
+        voice_settings: {
+          stability: 0.5,
+          similarity_boost: 0.75,
+          style: 0.05,
+          use_speaker_boost: true,
+        },
+      }),
+    },
+  );
+  if (!response.ok) {
+    const detail = (await response.text()).replaceAll(key, "[redacted]").slice(0, 240);
+    const error = new Error(`ElevenLabs voice failed (${response.status}). ${detail}`);
+    error.status = 502;
+    throw error;
+  }
+  await writeFile(output, Buffer.from(await response.arrayBuffer()));
 }
 
-async function fitVoice(input, slotSec, output) {
-  const duration = await probeDuration(input);
-  const filters = ["aresample=48000"];
-  if (duration > slotSec + 0.05) {
-    let remain = duration / slotSec;
-    while (remain > 2) {
-      filters.push("atempo=2");
-      remain /= 2;
-    }
-    filters.push(`atempo=${Math.max(1, remain).toFixed(4)}`);
-  }
-  filters.push("aformat=sample_fmts=fltp:channel_layouts=mono");
-  await run("ffmpeg", ["-y", "-i", input, "-af", filters.join(","), output]);
+async function fitVoice(input, output) {
+  await run("ffmpeg", [
+    "-y",
+    "-i",
+    input,
+    "-af",
+    "aresample=48000,aformat=sample_fmts=fltp:channel_layouts=mono",
+    output,
+  ]);
 }
 
 function mixBedAndVoice({ musicPath, voicePath, duration, lead, output }) {

@@ -3,8 +3,8 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Resvg } from "@resvg/resvg-js";
 import { BRANDS } from "../shared/catalog.js";
-import { VIDEO_FPS, VIDEO_HEIGHT, VIDEO_WIDTH, buildTimeline, fitText, parseDuration } from "../shared/model.js";
-import { renderSoundtrack } from "./audio.js";
+import { VIDEO_FPS, VIDEO_HEIGHT, VIDEO_WIDTH, VOICE_NAME, buildTimeline, fitText, parseDuration } from "../shared/model.js";
+import { MISSING_ELEVENLABS_KEY, renderSoundtrack } from "./audio.js";
 
 const FONTS = [
   "/usr/share/fonts/truetype/noto/NotoSerif-Bold.ttf",
@@ -59,11 +59,21 @@ export async function renderFilm({ campaign, assets, output }) {
     clips.push(clipPath);
   }
 
-  const soundtrack = await renderSoundtrack({
-    duration: duration.value,
-    brandId: campaign.brief.brandId,
-    workDir: work,
-  });
+  let soundtrack = path.join(work, "music.wav");
+  let voiceName = VOICE_NAME;
+  let elevenLabsCalled = false;
+  try {
+    const mixed = await renderSoundtrack({
+      duration: duration.value,
+      brandId: campaign.brief.brandId,
+      workDir: work,
+    });
+    soundtrack = mixed.path;
+    voiceName = mixed.voiceName;
+    elevenLabsCalled = mixed.elevenLabsCalled;
+  } catch (error) {
+    if (error.code !== MISSING_ELEVENLABS_KEY) throw error;
+  }
   await crossfade({
     clips,
     timeline,
@@ -88,7 +98,7 @@ export async function renderFilm({ campaign, assets, output }) {
   if (Math.abs(probed.audioDuration - duration.value) > 0.2) {
     throw new Error(`Audio was ${probed.audioDuration.toFixed(2)}s, expected ${duration.value}s.`);
   }
-  return probed;
+  return { ...probed, voiceName, elevenLabsCalled };
 }
 
 function plateSvg({ scene, asset, brandId }) {

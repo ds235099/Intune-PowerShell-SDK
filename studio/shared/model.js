@@ -10,8 +10,14 @@ export const VIDEO_FPS = 60;
 export const LENGTH_RULE = "Every ad is at least 4 seconds and at most 3 minutes.";
 export const VOICE_SHORT = "Easy Agent. Built with belief. Made to do more.";
 export const VOICE_LONG_EXTRA = "AI software solutions for a bigger tomorrow. Adelaide, Australia.";
+export const VOICE_NAME = "Brian";
+export const VOICE_ID = "nPczCjzI2devNBz1zQrb";
+export const VOICE_MODEL = "eleven_multilingual_v2";
+export const VOICE_SCRIPT =
+  "Easy Agent. Built with belief. Made to do more. We build AI software for a bigger tomorrow. Automate the work. Innovate the product. Scale it globally. From Adelaide, Australia, Easy Agent brings people, ideas, and technology together. Bigger. Smarter. Stronger. Together. Your ad can run from four seconds to three minutes. Easy Agent puts your brand on screen. Meet Darren Smith, founder. Built with belief. Made to do more.";
 
 export function voiceoverScript(durationSec) {
+  if (durationSec >= 45) return VOICE_SCRIPT;
   if (durationSec <= 20) return VOICE_SHORT;
   return `${VOICE_SHORT} ${VOICE_LONG_EXTRA}`;
 }

@@ -21,7 +21,7 @@ npm start
 
 ## Export
 
-Films are 1920×1080, 60 fps, H.264. Every export also carries an original instrumental bed generated in the pipeline, and a local voice from espeak-ng. Short ads (20 seconds or less) say “Easy Agent. Built with belief. Made to do more.” Longer ads add “AI software solutions for a bigger tomorrow. Adelaide, Australia.” The music ducks under the voice. Install espeak-ng on the machine that renders; the app does not call a paid voice API and does not clone a person’s voice.
+Films are 1920×1080, 60 fps, H.264. Every export carries an original instrumental bed generated in the pipeline. The voice is ElevenLabs’ premade voice Brian (`eleven_multilingual_v2`). It is not a clone of a real person, and the renderer does not fall back to espeak or any other computer voice. Set `ELEVENLABS_API_KEY` in the environment before export. If that key is missing, the picture and music bed are still written and the voice step stops. Ads of 45 seconds or longer speak the full Easy Agent read at a natural pace. Shorter ads use a shorter line. The music ducks under the voice when the read is present.
 
 The built-in renderer uses your stills, type, and brand color. It is not a generative video model.
 

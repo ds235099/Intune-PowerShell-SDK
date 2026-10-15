@@ -10,6 +10,8 @@ import {
   parseDuration,
   sceneBudget,
   VOICE_LONG_EXTRA,
+  VOICE_NAME,
+  VOICE_SCRIPT,
   VOICE_SHORT,
   voiceoverScript,
 } from "./model.js";
@@ -93,12 +95,17 @@ test("a long sports film can include uploaded stills without redrawing them", ()
   assert.equal(stills.every((scene) => scene.headline === "" && scene.kicker === ""), true);
 });
 
-test("voiceover stays short at 15 seconds and adds the second line on longer ads", () => {
+test("voiceover stays short at 15 seconds and uses the full read from 45 seconds", () => {
   assert.equal(voiceoverScript(4), VOICE_SHORT);
   assert.equal(voiceoverScript(15), VOICE_SHORT);
   assert.equal(voiceoverScript(20), VOICE_SHORT);
   assert.equal(voiceoverScript(30), `${VOICE_SHORT} ${VOICE_LONG_EXTRA}`);
-  assert.equal(voiceoverScript(180), `${VOICE_SHORT} ${VOICE_LONG_EXTRA}`);
+  assert.equal(voiceoverScript(45), VOICE_SCRIPT);
+  assert.equal(voiceoverScript(48), VOICE_SCRIPT);
+  assert.equal(voiceoverScript(180), VOICE_SCRIPT);
+  assert.equal(VOICE_NAME, "Brian");
+  assert.match(VOICE_SCRIPT, /Meet Darren Smith, founder/);
+  assert.match(VOICE_SCRIPT, /four seconds to three minutes/);
 });
 
 test("four second film still has a hook and a call to action", () => {

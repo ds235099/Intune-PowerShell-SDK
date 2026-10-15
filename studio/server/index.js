@@ -14,10 +14,12 @@ import {
   PRESETS,
   PRODUCT_NAME,
   TONES,
+  VOICE_NAME,
   buildFilm,
   normalizeBrief,
 } from "../shared/model.js";
 import { addUpload, dataDir, getAsset, isAllowedUpload, listAssets, loadLibrary, previewPath, removeUpload, uploadDir } from "./library.js";
+import { elevenLabsKeyPresent } from "./audio.js";
 import { renderFilm } from "./render.js";
 import { getCampaign, listCampaigns, saveCampaign } from "./store.js";
 
@@ -93,6 +95,8 @@ app.get("/api/meta", (_req, res) => {
     tones: TONES,
     presets: PRESETS,
     providers: providers(),
+    voiceName: VOICE_NAME,
+    elevenLabs: elevenLabsKeyPresent(),
     accepts: ["jpg", "jpeg", "png", "webp", "gif", "mp4", "mov"],
   });
 });
@@ -352,6 +356,8 @@ async function exportCampaign(id) {
       durationSec: campaign.brief.durationSec,
       frames: probed.frames,
       audioCodec: probed.audioCodec,
+      voiceName: probed.voiceName,
+      elevenLabsCalled: probed.elevenLabsCalled,
       bytes: info.size,
       createdAt: new Date().toISOString(),
     };

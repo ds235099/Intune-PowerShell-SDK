@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { BRANDS } from "@shared/catalog.js";
-import { LENGTH_RULE, formatDuration, voiceoverScript } from "@shared/model.js";
+import { LENGTH_RULE, VOICE_NAME, formatDuration, voiceoverScript } from "@shared/model.js";
 import { api, mediaUrl } from "../api.js";
 import { LengthPicker } from "../components/LengthPicker.jsx";
 import { Stage } from "../components/Stage.jsx";
@@ -148,7 +148,11 @@ export function Studio() {
           ) : (
             <p className="fine spec-line">Export target: 1920×1080 at 60 fps · {formatDuration(campaign.brief.durationSec)} · H.264 · original music</p>
           )}
-          <p className="fine spec-line">Voice: {voiceoverScript(campaign.brief.durationSec)} The music ducks under the line.</p>
+          {campaign.export && campaign.export.elevenLabsCalled === false ? (
+            <p className="fine spec-line">ElevenLabs key is missing. This export has the picture and the music bed, and no voiceover.</p>
+          ) : (
+            <p className="fine spec-line">Voice ({VOICE_NAME}): {voiceoverScript(campaign.brief.durationSec)} The music ducks under the line.</p>
+          )}
         </section>
         <section className="script">
           <h2>Script</h2>
