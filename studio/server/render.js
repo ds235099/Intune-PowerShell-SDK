@@ -4,6 +4,7 @@ import path from "node:path";
 import { Resvg } from "@resvg/resvg-js";
 import { BRANDS } from "../shared/catalog.js";
 import { VIDEO_FPS, VIDEO_HEIGHT, VIDEO_WIDTH, buildTimeline, fitText, parseDuration } from "../shared/model.js";
+import { renderSoundtrack } from "./audio.js";
 
 const FONTS = [
   "/usr/share/fonts/truetype/noto/NotoSerif-Bold.ttf",
@@ -58,7 +59,19 @@ export async function renderFilm({ campaign, assets, output }) {
     clips.push(clipPath);
   }
 
-  await crossfade({ clips, timeline, frames: duration.value * VIDEO_FPS, output });
+  const soundtrack = await renderSoundtrack({
+    duration: duration.value,
+    brandId: campaign.brief.brandId,
+    workDir: work,
+  });
+  await crossfade({
+    clips,
+    timeline,
+    frames: duration.value * VIDEO_FPS,
+    duration: duration.value,
+    soundtrack,
+    output,
+  });
   const probed = await probeVideo(output);
   if (probed.width !== VIDEO_WIDTH || probed.height !== VIDEO_HEIGHT) {
     throw new Error(`Export was ${probed.width}×${probed.height}, expected ${VIDEO_WIDTH}×${VIDEO_HEIGHT}.`);
@@ -68,6 +81,12 @@ export async function renderFilm({ campaign, assets, output }) {
   }
   if (Math.abs(probed.duration - duration.value) > 0.08) {
     throw new Error(`Export was ${probed.duration.toFixed(2)}s, expected ${duration.value}s.`);
+  }
+  if (!probed.audioCodec) {
+    throw new Error("Export has no audio stream.");
+  }
+  if (Math.abs(probed.audioDuration - duration.value) > 0.2) {
+    throw new Error(`Audio was ${probed.audioDuration.toFixed(2)}s, expected ${duration.value}s.`);
   }
   return probed;
 }
@@ -259,11 +278,48 @@ async function renderVideoClip({ scene, asset, frames, clipPath, brand }) {
   return run("ffmpeg", args);
 }
 
-function crossfade({ clips, timeline, frames, output }) {
+function crossfade({ clips, timeline, frames, duration, soundtrack, output }) {
   const args = ["-y"];
   for (const clip of clips) args.push("-i", clip);
+  const audioIndex = clips.length;
+  args.push("-i", soundtrack);
+  const audioArgs = [
+    "-map",
+    `${audioIndex}:a:0`,
+    "-c:a",
+    "aac",
+    "-b:a",
+    "192k",
+    "-ar",
+    "48000",
+    "-ac",
+    "2",
+  ];
   if (clips.length === 1) {
-    args.push("-frames:v", String(frames), "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-an", output);
+    args.push(
+      "-map",
+      "0:v:0",
+      "-frames:v",
+      String(frames),
+      "-r",
+      "60",
+      "-t",
+      String(duration),
+      ...audioArgs,
+      "-c:v",
+      "libx264",
+      "-profile:v",
+      "high",
+      "-preset",
+      "veryfast",
+      "-crf",
+      "18",
+      "-pix_fmt",
+      "yuv420p",
+      "-movflags",
+      "+faststart",
+      output,
+    );
     return run("ffmpeg", args);
   }
   const filters = clips.map((_, index) => `[${index}:v]fps=60,format=yuv420p,settb=1/60,setpts=PTS-STARTPTS[v${index}]`);
@@ -282,6 +338,9 @@ function crossfade({ clips, timeline, frames, output }) {
     String(frames),
     "-r",
     "60",
+    "-t",
+    String(duration),
+    ...audioArgs,
     "-c:v",
     "libx264",
     "-profile:v",
@@ -294,7 +353,6 @@ function crossfade({ clips, timeline, frames, output }) {
     "yuv420p",
     "-movflags",
     "+faststart",
-    "-an",
     output,
   );
   return run("ffmpeg", args);
@@ -305,10 +363,8 @@ function probeVideo(file) {
     const child = spawn("ffprobe", [
       "-v",
       "error",
-      "-select_streams",
-      "v:0",
       "-show_entries",
-      "stream=width,height,avg_frame_rate,nb_frames,duration",
+      "stream=codec_type,codec_name,width,height,avg_frame_rate,nb_frames,duration",
       "-of",
       "json",
       file,
@@ -327,7 +383,9 @@ function probeVideo(file) {
         reject(new Error(err.slice(-400) || "Could not read the exported film."));
         return;
       }
-      const stream = JSON.parse(out).streams?.[0] || {};
+      const streams = JSON.parse(out).streams || [];
+      const stream = streams.find((item) => item.codec_type === "video") || {};
+      const audio = streams.find((item) => item.codec_type === "audio") || {};
       const [num, den] = String(stream.avg_frame_rate || "0/1").split("/").map(Number);
       resolve({
         width: Number(stream.width) || 0,
@@ -335,6 +393,8 @@ function probeVideo(file) {
         fps: den ? num / den : 0,
         duration: Number(stream.duration) || 0,
         frames: Number(stream.nb_frames) || 0,
+        audioCodec: audio.codec_name || "",
+        audioDuration: Number(audio.duration) || 0,
       });
     });
   });

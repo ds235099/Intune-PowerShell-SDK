@@ -21,6 +21,8 @@ npm start
 
 ## Export
 
-Films are 1920×1080, 60 fps, H.264. The built-in renderer uses your stills, type, and brand color. It is not a generative video model.
+Films are 1920×1080, 60 fps, H.264. Every export also carries an original instrumental bed generated in the pipeline, and a local voice from espeak-ng. Short ads (20 seconds or less) say “Easy Agent. Built with belief. Made to do more.” Longer ads add “AI software solutions for a bigger tomorrow. Adelaide, Australia.” The music ducks under the voice. Install espeak-ng on the machine that renders; the app does not call a paid voice API and does not clone a person’s voice.
+
+The built-in renderer uses your stills, type, and brand color. It is not a generative video model.
 
 An external model can be connected later with `VIDEO_MODEL_API_KEY` and `VIDEO_MODEL_API_URL`. Nothing is called without a key, and no key is stored in the app.

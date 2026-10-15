@@ -9,6 +9,9 @@ import {
   buildTimeline,
   parseDuration,
   sceneBudget,
+  VOICE_LONG_EXTRA,
+  VOICE_SHORT,
+  voiceoverScript,
 } from "./model.js";
 
 test("duration rejects anything outside 4 seconds to 3 minutes", () => {
@@ -88,6 +91,14 @@ test("a long sports film can include uploaded stills without redrawing them", ()
   const stills = film.scenes.filter((scene) => scene.treatment === "still");
   assert.ok(stills.length >= 1);
   assert.equal(stills.every((scene) => scene.headline === "" && scene.kicker === ""), true);
+});
+
+test("voiceover stays short at 15 seconds and adds the second line on longer ads", () => {
+  assert.equal(voiceoverScript(4), VOICE_SHORT);
+  assert.equal(voiceoverScript(15), VOICE_SHORT);
+  assert.equal(voiceoverScript(20), VOICE_SHORT);
+  assert.equal(voiceoverScript(30), `${VOICE_SHORT} ${VOICE_LONG_EXTRA}`);
+  assert.equal(voiceoverScript(180), `${VOICE_SHORT} ${VOICE_LONG_EXTRA}`);
 });
 
 test("four second film still has a hook and a call to action", () => {

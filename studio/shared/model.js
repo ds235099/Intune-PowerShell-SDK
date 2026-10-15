@@ -8,6 +8,13 @@ export const VIDEO_WIDTH = 1920;
 export const VIDEO_HEIGHT = 1080;
 export const VIDEO_FPS = 60;
 export const LENGTH_RULE = "Every ad is at least 4 seconds and at most 3 minutes.";
+export const VOICE_SHORT = "Easy Agent. Built with belief. Made to do more.";
+export const VOICE_LONG_EXTRA = "AI software solutions for a bigger tomorrow. Adelaide, Australia.";
+
+export function voiceoverScript(durationSec) {
+  if (durationSec <= 20) return VOICE_SHORT;
+  return `${VOICE_SHORT} ${VOICE_LONG_EXTRA}`;
+}
 
 export { BRANDS };
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { BRANDS } from "@shared/catalog.js";
-import { LENGTH_RULE, formatDuration } from "@shared/model.js";
+import { LENGTH_RULE, formatDuration, voiceoverScript } from "@shared/model.js";
 import { api, mediaUrl } from "../api.js";
 import { LengthPicker } from "../components/LengthPicker.jsx";
 import { Stage } from "../components/Stage.jsx";
@@ -143,11 +143,12 @@ export function Studio() {
           )}
           {campaign.export ? (
             <p className="fine spec-line">
-              Exported {campaign.export.width}×{campaign.export.height} at {campaign.export.fps} fps · {formatDuration(campaign.export.durationSec)} · H.264
+              Exported {campaign.export.width}×{campaign.export.height} at {campaign.export.fps} fps · {formatDuration(campaign.export.durationSec)} · H.264{campaign.export.audioCodec ? ` · ${campaign.export.audioCodec.toUpperCase()}` : ""}
             </p>
           ) : (
-            <p className="fine spec-line">Export target: 1920×1080 at 60 fps · {formatDuration(campaign.brief.durationSec)} · H.264</p>
+            <p className="fine spec-line">Export target: 1920×1080 at 60 fps · {formatDuration(campaign.brief.durationSec)} · H.264 · original music</p>
           )}
+          <p className="fine spec-line">Voice: {voiceoverScript(campaign.brief.durationSec)} The music ducks under the line.</p>
         </section>
         <section className="script">
           <h2>Script</h2>

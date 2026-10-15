@@ -351,6 +351,7 @@ async function exportCampaign(id) {
       fps: Math.round(probed.fps),
       durationSec: campaign.brief.durationSec,
       frames: probed.frames,
+      audioCodec: probed.audioCodec,
       bytes: info.size,
       createdAt: new Date().toISOString(),
     };
