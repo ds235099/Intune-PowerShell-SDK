@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Slider button order</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="masthead">
+    <p class="eyebrow">Cloudflare Worker</p>
+    <h1>Slider buttons return to working order</h1>
+    <p class="lede">Previous and Next start pinned with <code>position: fixed</code>. The page measures them and the Worker confirms the same decision, then both buttons move into the slider dock.</p>
+  </header>
+
+  <main>
+    <section class="stage" id="stage" aria-label="Slider">
+      <div class="viewport" id="slider" tabindex="0" aria-roledescription="carousel" aria-label="Working order slides">
+        <div class="track" id="track">
+          <article class="slide" id="slide-1" data-title="Buttons start fixed">
+            <p class="slide-kicker">01</p>
+            <h2>Buttons start fixed</h2>
+            <p>A fixed pin pulls Previous and Next out of the slider and sticks them to the viewport. That is not their working order.</p>
+          </article>
+          <article class="slide" id="slide-2" data-title="The edge checks geometry">
+            <p class="slide-kicker">02</p>
+            <h2>The edge checks geometry</h2>
+            <p>The browser posts each button rectangle to <code>POST /api/order</code>. The Worker answers with the order the controls should use.</p>
+          </article>
+          <article class="slide" id="slide-3" data-title="Normal order sits in the dock">
+            <p class="slide-kicker">03</p>
+            <h2>Normal order sits in the dock</h2>
+            <p>Normal order is ordinary flow: Previous, the slide count, then Next, directly under the frame.</p>
+          </article>
+          <article class="slide" id="slide-4" data-title="The controls heal themselves">
+            <p class="slide-kicker">04</p>
+            <h2>The controls heal themselves</h2>
+            <p>Resize the window or pin the buttons again. The watcher switches them back to normal working order.</p>
+          </article>
+        </div>
+      </div>
+
+      <div class="dock" id="dock">
+        <button id="prev" class="slider-btn" type="button" data-slider-button data-placement="fixed" aria-label="Previous slide">Previous</button>
+        <p class="count" id="slide-count" aria-live="polite">1 / 4</p>
+        <button id="next" class="slider-btn" type="button" data-slider-button data-placement="fixed" aria-label="Next slide">Next</button>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="order-heading">
+      <div class="panel-top">
+        <h2 id="order-heading">Order</h2>
+        <p id="order-label" class="pill" data-order="fixed" data-reason="pending" data-source="pending">Fixed</p>
+      </div>
+      <p id="reason">Waiting for the first measurement.</p>
+      <p id="order-live" class="visually-hidden" aria-live="polite"></p>
+      <div class="actions">
+        <button id="replay" type="button">Pin buttons fixed</button>
+      </div>
+      <ol id="log"></ol>
+    </section>
+  </main>
+
+  <noscript>
+    <p>JavaScript runs the automatic switch from fixed pins to the normal dock.</p>
+  </noscript>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
